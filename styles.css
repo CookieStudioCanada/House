@@ -19,4 +19,14 @@
     color: #6c757d;
     margin-top: 0.5rem;
     font-style: italic;
+}
+
+.valid-percentage {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.invalid-percentage {
+    color: #f44336;
+    font-weight: bold;
 } 

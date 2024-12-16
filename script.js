@@ -71,10 +71,8 @@ document.addEventListener('DOMContentLoaded', function() {
         },
 
         formatMoney(amount) {
-            return new Intl.NumberFormat('fr-CA', {
-                style: 'currency',
-                currency: 'CAD'
-            }).format(amount);
+            const formattedNumber = Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            return `${formattedNumber}$`;
         },
 
         getWelcomeTaxExplanation(city) {
@@ -101,6 +99,67 @@ document.addEventListener('DOMContentLoaded', function() {
             return explanations[city] || 'Veuillez sélectionner une ville pour voir le détail des taux.';
         }
     };
+
+    // Fonction pour valider la mise de fonds minimale
+    function calculateMinimumDownPayment(price) {
+        if (price >= 1000000) {
+            return price * 0.20; // 20% pour 1M$ et plus
+        } else if (price > 500000) {
+            return (500000 * 0.05) + ((price - 500000) * 0.10);
+        }
+        return price * 0.05;
+    }
+
+    // Fonction pour valider et mettre à jour le style du champ de mise de fonds
+    function validateDownPayment(price, downPayment) {
+        const minDownPayment = calculateMinimumDownPayment(price);
+        const percentageElement = document.getElementById('downPaymentPercentage').querySelector('span');
+        
+        if (downPayment >= minDownPayment) {
+            percentageElement.classList.remove('invalid-percentage');
+            percentageElement.classList.add('valid-percentage');
+            return true;
+        } else {
+            percentageElement.classList.remove('valid-percentage');
+            percentageElement.classList.add('invalid-percentage');
+            return false;
+        }
+    }
+
+    // Modifier l'event listener du prix
+    document.getElementById('price').addEventListener('input', function() {
+        const price = parseFloat(this.value) || 0;
+        const minimumDownPayment = calculateMinimumDownPayment(price);
+        
+        const downPaymentInput = document.getElementById('downPayment');
+        downPaymentInput.value = minimumDownPayment;
+        
+        const percentageElement = document.getElementById('downPaymentPercentage');
+        if (price > 0) {
+            const percentage = ((minimumDownPayment / price) * 100).toFixed(2);
+            percentageElement.innerHTML = `<span class="valid-percentage">(${percentage}%)</span>`;
+            validateDownPayment(price, minimumDownPayment);
+        } else {
+            percentageElement.innerHTML = '<span>(0%)</span>';
+            percentageElement.querySelector('span').classList.remove('valid-percentage', 'invalid-percentage');
+        }
+    });
+
+    // Modifier l'event listener de la mise de fonds
+    document.getElementById('downPayment').addEventListener('input', function() {
+        const price = parseFloat(document.getElementById('price').value) || 0;
+        const downPayment = parseFloat(this.value) || 0;
+        
+        const percentageElement = document.getElementById('downPaymentPercentage');
+        if (price > 0) {
+            const percentage = ((downPayment / price) * 100).toFixed(2);
+            percentageElement.innerHTML = `<span>(${percentage}%)</span>`;
+            validateDownPayment(price, downPayment);
+        } else {
+            percentageElement.innerHTML = '<span>(0%)</span>';
+            percentageElement.querySelector('span').classList.remove('valid-percentage', 'invalid-percentage');
+        }
+    });
 
     document.getElementById('calculate').addEventListener('click', function() {
         const price = parseFloat(document.getElementById('price').value) || 0;
